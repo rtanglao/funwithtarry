@@ -23,8 +23,8 @@ def getFlickrResponse(url, params, logger)
       result = Typhoeus::Request.get(url,
                                    :params => params )
       x = JSON.parse(result.body)
-      logger.debug x.ai
-      logger.debug x["photos"].ai
+      #logger.debug x.ai
+      #logger.debug x["photos"].ai
     rescue JSON::ParserError => e
       try_count += 1
       if try_count < 4
@@ -64,17 +64,20 @@ max_taken_date  = MIN_DATE + (60 * 60 * 24) - 1
 $stderr.printf("min_taken:%s max_taken:%s\n", min_taken_date, max_taken_date)
 search_url = "services/rest/"
 csv_array = []
+exit_program = false
 while min_taken_date < MAX_DATE
+  break if exit_program
   photos_to_retrieve = 250
   first_page = true
   photos_per_page = 0
   page = 1
   while photos_to_retrieve > 0
+    break if exit_program
     url_params = {:method => "flickr.photos.search",
       :api_key => api_key,
       :format => "json",
       :nojsoncallback => "1", 
-      #:woe_id => 9807, # chinatown
+      :woeid => "26332810", # gastown
       :content_type => "7", # all: photos, videos, etc
       :per_page     => "250",
       :extras =>  extras_str,
@@ -121,12 +124,16 @@ while min_taken_date < MAX_DATE
       id = photo["id"]
       logger.debug "PHOTO id:" + id.to_s
       logger.debug photo.ai
+      if !csv_array.none? {|x| x[:id] == id}
+        exit_program = true
+      else
       # id,owner,secret,server,farm,title,ispublic,isfriend,isfamily,license,description/_content,o_width,o_height,datetakengranularity,datetakenunknown,ownername,iconserver,iconfarm,views,tags,machine_tags,originalsecret,originalformat,latitude,longitude,accuracy,context,place_id,woeid,geo_is_public,geo_is_contact,geo_is_friend,geo_is_family,media,media_status,url_sq,height_sq,width_sq,url_t,height_t,width_t,url_s,height_s,width_s,url_m,height_m,width_m,url_z,height_z,width_z,url_l,height_l,width_l,url_o,height_o,width_o,url_c,height_c,width_c,url_q,height_q,width_q,url_n,height_n,width_n,url_k,height_k,width_k,url_h,height_h,width_h,pathalias
-      photo["description_content"] = photo["description"]["_content"]
-      photo_without_nested_stuff = photo.except("description")
-      csv_array.push(photo_without_nested_stuff)
-      #logger.debug photo.except("description").ai
-      puts photo_without_nested_stuff
+        photo["description_content"] = photo["description"]["_content"]
+        photo_without_nested_stuff = photo.except("description")
+        csv_array.push(photo_without_nested_stuff)
+        #logger.debug photo.except("description").ai
+        puts photo_without_nested_stuff
+      end
     end
   end
   min_taken_date += (60 * 60 * 24)
@@ -135,8 +142,8 @@ end
 headers = csv_array[0].keys
 #headers = [
 #    "id","owner","secret","server","farm","title","ispublic","isfriend","isfamily","license","description/#_content","o_width","o_height","datetakengranularity","datetakenunknown","ownername","iconserver",#"iconfarm","views","tags","machine_tags","originalsecret","originalformat","latitude","longitude",#"accuracy","context","place_id","woeid","geo_is_public","geo_is_contact","geo_is_friend","geo_is_family",#"media","media_status","url_sq","height_sq","width_sq","url_t","height_t","width_t","url_s","height_s",#"width_s","url_m","height_m","width_m","url_z","height_z","width_z","url_l","height_l","width_l","url_o",#"height_o","width_o","url_c","height_c","width_c","url_q","height_q","width_q","url_n","height_n",#"width_n","url_k","height_k","width_k","url_h","height_h","width_h","pathalias"]
-  FILENAME = sprintf("%s-roland-flickr-metadata.csv", 
-    ARGV[0].to_i)
+  FILENAME = sprintf("%s-%s-woeid-gastown-revolvercoffee-flickr-metadata.csv", 
+                     MIN_DATE, MAX_DATE)
   CSV.open(FILENAME, "w", write_headers: true, headers: headers) do |csv_object|
     csv_array.each {|row_array| csv_object << row_array }
   end
