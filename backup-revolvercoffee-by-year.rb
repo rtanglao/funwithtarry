@@ -23,8 +23,8 @@ def getFlickrResponse(url, params, logger)
       result = Typhoeus::Request.get(url,
                                    :params => params )
       x = JSON.parse(result.body)
-      logger.debug x.ai
-      logger.debug x["photos"].ai
+      #logger.debug x.ai
+      #logger.debug x["photos"].ai
     rescue JSON::ParserError => e
       try_count += 1
       if try_count < 4
@@ -74,7 +74,6 @@ while min_taken_date < MAX_DATE
       :api_key => api_key,
       :format => "json",
       :nojsoncallback => "1", 
-      #:woe_id => 9807, # chinatown
       :content_type => "7", # all: photos, videos, etc
       :per_page     => "250",
       :extras =>  extras_str,
@@ -135,8 +134,8 @@ end
 headers = csv_array[0].keys
 #headers = [
 #    "id","owner","secret","server","farm","title","ispublic","isfriend","isfamily","license","description/#_content","o_width","o_height","datetakengranularity","datetakenunknown","ownername","iconserver",#"iconfarm","views","tags","machine_tags","originalsecret","originalformat","latitude","longitude",#"accuracy","context","place_id","woeid","geo_is_public","geo_is_contact","geo_is_friend","geo_is_family",#"media","media_status","url_sq","height_sq","width_sq","url_t","height_t","width_t","url_s","height_s",#"width_s","url_m","height_m","width_m","url_z","height_z","width_z","url_l","height_l","width_l","url_o",#"height_o","width_o","url_c","height_c","width_c","url_q","height_q","width_q","url_n","height_n",#"width_n","url_k","height_k","width_k","url_h","height_h","width_h","pathalias"]
-  FILENAME = sprintf("%s-roland-flickr-metadata.csv", 
-    ARGV[0].to_i)
+  FILENAME = sprintf("%s-%s-revolvercoffee-flickr-metadata.csv", 
+    MIN_DATE, MAX_DATE)
   CSV.open(FILENAME, "w", write_headers: true, headers: headers) do |csv_object|
     csv_array.each {|row_array| csv_object << row_array }
   end
